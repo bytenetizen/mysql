@@ -1,0 +1,9 @@
+Вместо tablename необходимо поставить название проблемной таблицы (без скобок и кавычек)
+
+ALTER TABLE tablename add newid INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST;
+
+ALTER TABLE имя_таблицы MODIFY `имя_поля` INT(11); 
+ALTER TABLE имя_таблицы DROP PRIMARY KEY; 
+UPDATE имя_таблицы SET `имя_поля`='0'; 
+ALTER TABLE имя_таблицы AUTO_INCREMENT=0; 
+ALTER TABLE имя_таблицы MODIFY `имя_поля` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY;
