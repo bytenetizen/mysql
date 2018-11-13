@@ -13,3 +13,17 @@ $articles = R::getAll("SELECT songs.atime, songs.singer, songs.song, songs.creat
 #####################################################################
 24 Часа
 SELECT * FROM `table` WHERE (`timestamp` > DATE_SUB(now(), INTERVAL 1 DAY));
+
+#################################################################################
+За сегодня
+SELECT * FROM TABLE WHERE tc_date >= CURDATE()
+
+За вчера
+SELECT * FROM TABLE WHERE tc_date >= (CURDATE()-1) AND tc_date < CURDATE()
+
+За неделю
+SELECT * FROM TABLE WHERE tc_date >= DATE_SUB(CURRENT_DATE, INTERVAL 7 DAY)
+
+За месяц (За 30 дней)
+SELECT * FROM TABLE WHERE tc_date >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
+
