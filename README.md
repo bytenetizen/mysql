@@ -3,6 +3,8 @@ select *
 from count
 where date >= now() - interval 1 day
 ###############################################################
+$start = microtime(1);
+ $start = microtime(1) - $start;
 $articles = R::getAll("SELECT songs.atime, songs.singer, songs.song, songs.created, sing_media.video_id, sing_media.cover,sing_media.parser
                                 FROM songs
                                 JOIN sing_media on sing_media.absnum=songs.song_id
