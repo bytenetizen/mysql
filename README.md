@@ -26,4 +26,11 @@ SELECT * FROM TABLE WHERE tc_date >= DATE_SUB(CURRENT_DATE, INTERVAL 7 DAY)
 
 За месяц (За 30 дней)
 SELECT * FROM TABLE WHERE tc_date >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
-
+#########################################################################################
+SELECT (`t1`.`phone`+1) as `empty_phone`
+FROM `t1`
+WHERE (
+	SELECT 1 FROM `t1` as `st` WHERE `st`.`phone` = (`t1`.`phone` + 1)
+) IS NULL
+ORDER BY `t1`.`phone`
+LIMIT 1
