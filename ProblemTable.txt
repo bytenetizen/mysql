@@ -7,3 +7,14 @@ ALTER TABLE имя_таблицы DROP PRIMARY KEY;
 UPDATE имя_таблицы SET `имя_поля`='0'; 
 ALTER TABLE имя_таблицы AUTO_INCREMENT=0; 
 ALTER TABLE имя_таблицы MODIFY `имя_поля` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY;
+
+
+
+
+Если все банально и нет каких-либо зависимостей, простая табличка, в которой пересчет ни на что не повлияет, то можно попробовать следующее:
+
+ALTER TABLE `table_name` MODIFY `id` INT(11); 
+ALTER TABLE `table_name` DROP PRIMARY KEY; 
+UPDATE `table_name` SET `id`='0'; 
+ALTER TABLE `table_name` AUTO_INCREMENT=1; 
+ALTER TABLE `table_name` MODIFY `id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY;
