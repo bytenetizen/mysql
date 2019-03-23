@@ -2,6 +2,11 @@
 select *
 from count
 where date >= now() - interval 1 day
+#############################################################
+SELECT t1.id + 1 AS empy_id
+FROM bff_bbs_items AS t1
+LEFT JOIN bff_bbs_items AS t2 ON t2.id = t1.id +1
+WHERE t2.id IS NULL ORDER BY t1.id ASC
 ###############################################################
 $start = microtime(1);
  $start = microtime(1) - $start;
