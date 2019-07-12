@@ -1,0 +1,161 @@
+Вызов
+DB::select('call loan_pay('.$user_id.','.$order_id.','.$amount.',"'.$call_source.'")')
+
+Сама процедура
+bb1:BEGIN
+DECLARE persent, persent_delay, body, fine, result, balance,loan_body,loan_body_delay  DECIMAL(8,2) DEFAULT 0.00;
+DECLARE today TIMESTAMP DEFAULT CURRENT_DATE;
+
+SET balance = amount;
+
+/*UPDATE `users_scores` SET current_balance = current_balance + amount WHERE `id_order` = order_id AND `id_hdbk` = '5' AND `id_user` = user_id;*/
+
+INSERT INTO `billing_scores` (id_order, id_user, id_hdbks, amount, call_source, id_operation, created_at, updated_at) VALUES(order_id, user_id, '5', amount, call_source, '3', NOW(), NOW());
+
+SELECT sum(case when `id_hdbk`='3' then `current_balance` end),sum(case when `id_hdbk`='4' then `current_balance` end) INTO persent,persent_delay FROM `users_scores` WHERE (`id_user` = user_id AND `id_order` = order_id) AND `id_hdbk` in (3,4);
+
+/*Просроченные проценты*/
+IF ( 0 - persent_delay) > 0 THEN
+/*
+Счет - 4 Просрочка процентов кредита
+Операция 17 Погашение просроченных %% с клиентского счета
+*/
+	IF balance > ( 0 - persent_delay) 
+	THEN  
+	/* Поступление больше чем начисленные проценты
+	order_id, user_id, hdbk_id, amount,call_source,id_operation
+	*/
+		CALL pay_update_scores(order_id, user_id ,5, ( -1 * persent_delay), call_source, 17,'i');
+     	CALL pay_update_scores(order_id, user_id ,4, ( 0 - persent_delay), call_source, 17,'ui');
+     	CALL pay_update_loan_persent(order_id, ( 0 - persent_delay));
+      SET balance = balance - ( 0 - persent_delay) ;
+  
+   ELSE
+   /*Поступления меньше*/
+   	CALL pay_update_scores(order_id, user_id ,5, ( -1 * balance), call_source, 17,'i');
+	 	CALL pay_update_scores(order_id, user_id ,4, balance, call_source, 17,'ui');
+ 		CALL pay_update_loan_persent(order_id, balance);
+		SELECT 'stop_persent_delay';
+		LEAVE bb1;
+		
+	END IF;
+	
+END IF;
+/*END Просроченные проценты*/
+/*Проценты*/
+IF ( 0 - persent) > 0 THEN
+/*
+Счет - 4 Просрочка процентов кредита
+Операция 17 Погашение просроченных %% с клиентского счета
+*/
+	IF balance > ( 0 - persent)
+	THEN  
+	/* Поступление больше чем начисленные проценты
+	order_id, user_id, hdbk_id, amount,call_source,id_operation
+	*/
+		CALL pay_update_scores(order_id, user_id ,5, ( -1* persent), call_source, 5,'i');
+    	CALL pay_update_scores(order_id, user_id ,3, ( 0 - persent), call_source, 5,'ui');
+     	CALL pay_update_loan_persent(order_id, ( 0 - persent));
+      SET balance = balance - ( 0 - persent);
+   ELSE
+   /*Поступления меньше*/
+   	CALL pay_update_scores(order_id, user_id ,5, ( -1 * balance), call_source, 5,'i');
+	 	CALL pay_update_scores(order_id, user_id ,3, balance, call_source, 5,'ui');
+	 	CALL pay_update_loan_persent(order_id, balance);
+		SELECT 'stop_persent';
+	LEAVE bb1;
+	END IF;
+
+END IF;
+/*END Проценты*/
+/*Тело кредита*/
+IF balance > 0 
+THEN  
+		SELECT sum(case when `id_hdbk`='1' then `current_balance` end),sum(case when `id_hdbk`='2' then `current_balance` end) INTO loan_body,loan_body_delay FROM `users_scores` WHERE (`id_user` = user_id AND `id_order` = order_id) AND `id_hdbk` in (1,2);
+/*Просрочка тела кредита*/
+	IF (0 - loan_body_delay) > 0 THEN 
+
+		IF balance > (0 - loan_body_delay) THEN
+		/* Поступление больше чем тело просроченного кредита
+		order_id, user_id, hdbk_id, amount,call_source,id_operation
+		*/  
+		   CALL pay_update_scores(order_id, user_id ,5, ( -1 * loan_body_delay), call_source, 16,'i');
+	  		CALL pay_update_scores(order_id, user_id ,2, ( 0 - loan_body_delay), call_source, 16,'ui');
+			CALL pay_update_loan_body(order_id, ( 0 - loan_body_delay));
+       	SET balance = balance - (0 - loan_body_delay) ;
+   ELSE
+	   /*Поступления меньше чем тело просроченного кредита*/
+	   	CALL pay_update_scores(order_id, user_id ,5, (-1 * balance), call_source, 16,'i');
+			CALL pay_update_scores(order_id, user_id ,2, balance, call_source, 16,'ui');
+		 	CALL pay_update_loan_body(order_id, balance);
+			SELECT 'loan_body_delay';
+		LEAVE bb1;
+	END IF;
+
+END IF;
+/*END Просрочка тела кредита*/
+/*Тело кредита*/
+IF (0 - loan_body) > 0 THEN 
+
+	IF balance > (0 - loan_body) THEN
+		/* Поступление больше чем тело кредита
+		order_id, user_id, hdbk_id, amount,call_source,id_operation
+		*/  
+	     	CALL pay_update_scores(order_id, user_id ,5, loan_body, call_source, 4,'i');
+     		CALL pay_update_scores(order_id, user_id ,2, ( 0 - loan_body), call_source, 4,'ui');
+			CALL pay_update_loan_body(order_id, ( 0 - loan_body));
+	      SET balance = balance - (0 - loan_body) ;
+   ELSE
+	   /*Поступления меньше чем тело кредита*/
+	   	CALL pay_update_scores(order_id, user_id ,5, ( -1 * balance), call_source, 4,'i');
+		 	CALL pay_update_scores(order_id, user_id ,2, balance, call_source, 4,'ui');
+			CALL pay_update_loan_body(order_id, balance);
+			SELECT 'stop_body';
+		LEAVE bb1;
+	END IF;
+END IF;
+
+END IF;
+/*END Тело кредита*/
+/*Смотрим если есть остаток и пеня*/
+IF balance > 0 THEN 
+
+SELECT sum(`current_balance`) INTO fine FROM `users_scores` WHERE (`id_user` = user_id AND `id_order` = order_id) AND `id_hdbk` in (12);
+
+	IF ( 0 - fine) > 0 THEN 
+
+		IF balance > (0 - fine) THEN
+		/* Поступление больше чем пеня
+		order_id, user_id, hdbk_id, amount,call_source,id_operation
+		*/  
+			CALL pay_update_scores(order_id, user_id ,5, fine, call_source, 15,'i');
+     		CALL pay_update_scores(order_id, user_id ,12, ( 0 - fine), call_source, 15,'ui');
+ 			CALL pay_update_loan_fine(order_id, (0 - fine));
+        	SET balance = balance - (0 - fine);
+   	ELSE
+	   /*Поступления меньше чем пеня*/
+	   	CALL pay_update_scores(order_id, user_id ,5, ( -1 * balance), call_source, 15,'i');
+			CALL pay_update_scores(order_id, user_id ,12, balance, call_source, 15,'ui');
+			CALL pay_update_loan_fine(order_id, balance);
+			SELECT 'stop_fine';
+		LEAVE bb1;
+		END IF;
+	END IF;
+	
+END IF;
+/*END Смотрим если есть остаток и пеня*/
+/*Если переплата зачисляем на счет пользователя*/
+IF balance > 0 THEN
+	UPDATE `users_scores` SET `current_balance` = balance WHERE `id_order` = order_id AND `id_hdbk` = '5' AND `id_user` = user_id;
+	UPDATE `all_loans` SET `status` = '2' WHERE `id_order` = order_id AND `id_user` = user_id AND `status` = '1';
+END IF;
+  
+/*
+IF ( 0 - persent) > 150 THEN  
+
+   INSERT INTO `all_loan_logs` (id_user, site_visits) VALUES(777, '15');  
+
+END IF;*/
+SELECT 'loan_end';
+
+END
